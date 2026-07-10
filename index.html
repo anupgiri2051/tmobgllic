@@ -3,129 +3,166 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Transport License Box Delivery Management</title>
+    <title>स्मार्ट चालक अनुमति पत्र बक्स व्यवस्थापन प्रणाली - बागलुङ</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body class="bg-gray-100 font-sans">
 
-    <nav class="bg-slate-900 text-white p-4 shadow-md">
-        <div class="container mx-auto flex justify-between items-center">
-            <h1 class="text-xl font-bold">📦 Transport Department License Box Tracker</h1>
-            <span id="db-status" class="text-xs bg-amber-600 px-3 py-1 rounded-full animate-pulse">Syncing Cloud Database State...</span>
+    <nav class="bg-red-700 text-white p-4 shadow-md border-b-4 border-blue-800">
+        <div class="container mx-auto flex flex-col sm:flex-row justify-between items-center gap-3">
+            <div class="flex items-center gap-4">
+                <img src="logo.jpg" alt="Government Logo" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/2/23/Emblem_of_Nepal.svg'" class="h-16 w-auto object-contain bg-white p-1 rounded">
+                <div>
+                    <p class="text-xs font-bold uppercase tracking-wide text-red-100">गण्डकी प्रदेश सरकार</p>
+                    <p class="text-xs text-red-200 font-medium">भौतिक पूर्वाधार विकास तथा यातायात व्यवस्था मन्त्रालय</p>
+                    <h1 class="text-xl font-bold text-white tracking-tight">यातायात व्यवस्था कार्यालय, बागलुङ</h1>
+                </div>
+            </div>
+            <div class="flex flex-col items-end gap-1">
+                <span id="db-status" class="text-xs bg-amber-600 px-3 py-1 rounded-full font-semibold animate-pulse shadow">डेटाबेस जडान हुँदैछ...</span>
+                <button onclick="toggleAdminPanel()" class="text-xs bg-slate-800 hover:bg-slate-950 text-white px-2 py-1 rounded font-bold transition">👤 Admin Panel / खाता व्यवस्थापन</button>
+            </div>
         </div>
     </nav>
 
     <div class="container mx-auto p-6">
+        
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <div class="bg-white p-4 rounded-lg shadow border-l-4 border-slate-500">
-                <p class="text-gray-500 text-xs font-medium uppercase">Total Imported Registry</p>
-                <p id="total-count" class="text-xl font-bold text-gray-800">0</p>
+                <p class="text-gray-500 text-xs font-bold uppercase">जम्मा आयातित अनुमति पत्र (Total)</p>
+                <p id="total-count" class="text-2xl font-black text-gray-800">0</p>
             </div>
             <div class="bg-white p-4 rounded-lg shadow border-l-4 border-blue-500">
-                <p class="text-gray-500 text-xs font-medium uppercase">Active Storage Boxes</p>
-                <p id="box-count" class="text-xl font-bold text-gray-800">0</p>
+                <p class="text-gray-500 text-xs font-bold uppercase">सक्रिय बक्स संख्या (Active Boxes)</p>
+                <p id="box-count" class="text-2xl font-black text-gray-800">0</p>
             </div>
             <div class="bg-white p-4 rounded-lg shadow border-l-4 border-yellow-500">
-                <p class="text-gray-500 text-xs font-medium uppercase">Remaining in Box Containers (50/Box)</p>
-                <p id="pending-count" class="text-xl font-bold text-gray-800">0</p>
+                <p class="text-gray-500 text-xs font-bold uppercase">बक्समा बाँकी कार्ड (Remaining)</p>
+                <p id="pending-count" class="text-2xl font-black text-gray-800">0</p>
             </div>
             <div class="bg-white p-4 rounded-lg shadow border-l-4 border-green-500">
-                <p class="text-gray-500 text-xs font-medium uppercase">Distributed To Public</p>
-                <p id="distributed-count" class="text-xl font-bold text-gray-800">0</p>
+                <p class="text-gray-500 text-xs font-bold uppercase">वितरण भइसकेको (Distributed)</p>
+                <p id="distributed-count" class="text-2xl font-black text-green-700">0</p>
             </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="space-y-6">
-                <div class="bg-gradient-to-br from-slate-50 to-emerald-50 p-5 rounded-lg shadow border border-emerald-200">
-                    <h2 class="text-md font-semibold text-emerald-800 mb-1">📊 Import Dynamic File Batch</h2>
-                    <p class="text-xs text-gray-500 mb-4">Select your downloaded sheet file directly below to cluster cards automatically into boxes.</p>
-                    
-                    <input type="file" id="excel-file-input" accept=".xlsx, .xls, .csv" 
-                           class="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-emerald-600 file:text-white hover:file:bg-emerald-700 cursor-pointer" />
+                <div class="bg-white p-5 rounded-lg shadow border border-slate-200">
+                    <h2 class="text-md font-bold text-slate-800 mb-1 flex items-center gap-1.5">📊 नयाँ ब्याच आयात (Bulk Import)</h2>
+                    <p class="text-xs text-gray-500 mb-4">मुद्रण भएर आएको लाइसेन्स Excel/CSV फाइल यहाँबाट अपलोड गर्नुहोस् ।</p>
+                    <input type="file" id="excel-file-input" accept=".xlsx, .xls, .csv" class="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-red-700 file:text-white hover:file:bg-red-800 cursor-pointer shadow-sm" />
                 </div>
 
-                <div class="bg-white p-5 rounded-lg shadow">
-                    <h2 class="text-md font-semibold text-gray-700 mb-3">📦 Internal Box Capacities (Max 50)</h2>
+                <div class="bg-white p-5 rounded-lg shadow border border-slate-200">
+                    <h2 class="text-md font-bold text-slate-800 mb-3">📦 दराज बक्स क्षमता स्थिति (Max 50/Box)</h2>
                     <div id="box-tracker-list" class="space-y-3 max-h-60 overflow-y-auto pr-1"></div>
                 </div>
             </div>
 
-            <div class="lg:col-span-2 bg-white p-5 rounded-lg shadow">
+            <div class="lg:col-span-2 bg-white p-5 rounded-lg shadow border border-slate-200">
                 <div class="mb-4">
-                    <input type="text" id="search" placeholder="🔍 Search by License No, Surname, or Box #..." 
-                           class="w-full p-2.5 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+                    <input type="text" id="search" placeholder="🔍 लाइसेन्स नम्बर, थर (Surname) वा बक्स नम्बरबाट खोज्नुहोस्..." class="w-full p-3 border-2 border-slate-200 rounded-md text-sm focus:outline-none focus:border-red-600">
                 </div>
-                
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
                         <thead>
-                            <tr class="bg-gray-50 text-gray-600 uppercase text-xs border-b">
-                                <th class="p-3">Box Allocation</th>
-                                <th class="p-3">License No.</th>
-                                <th class="p-3">Card Name</th>
-                                <th class="p-3">Status</th>
-                                <th class="p-3 text-right">Counter Process</th>
+                            <tr class="bg-slate-100 text-slate-700 uppercase text-xs border-b border-slate-200">
+                                <th class="p-3">बक्स नं (Box)</th>
+                                <th class="p-3">लाइसेन्स नं.</th>
+                                <th class="p-3">चालकको नाम</th>
+                                <th class="p-3">स्थिति (Status)</th>
+                                <th class="p-3 text-right">कार्य (Action)</th>
                             </tr>
                         </thead>
-                        <tbody id="license-table-body" class="text-gray-700 text-sm divide-y"></tbody>
+                        <tbody id="license-table-body" class="text-gray-700 text-sm divide-y divide-slate-100"></tbody>
                     </table>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="handout-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 p-4">
-        <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <h3 class="text-lg font-bold text-gray-800 mb-1">Verify Public Distribution Receipt</h3>
-            <p id="modal-license-info" class="text-xs text-blue-600 font-medium mb-4"></p>
+    <div id="admin-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center hidden z-50 p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-lg shadow-2xl max-w-lg w-full p-6 border-t-8 border-slate-800">
+            <h3 class="text-lg font-bold text-gray-800 mb-2">👤 कर्मचारी प्रयोगकर्ता खाता व्यवस्थापन (User Management)</h3>
             
+            <form id="create-user-form" class="bg-slate-50 p-3 rounded border mb-4 space-y-3">
+                <p class="text-xs font-bold text-slate-700">नयाँ खाता थप्नुहोस् (Create User Account)</p>
+                <div class="grid grid-cols-2 gap-2">
+                    <input type="text" id="new-username" required placeholder="प्रयोगकर्ताको नाम (Username)" class="p-2 border text-xs rounded focus:outline-none">
+                    <input type="password" id="new-password" required placeholder="पासवर्ड (Password)" class="p-2 border text-xs rounded focus:outline-none">
+                </div>
+                <div class="flex justify-between items-center">
+                    <select id="new-role" class="p-1.5 border text-xs bg-white rounded focus:outline-none">
+                        <option value="Clerk">Counter Clerk (कर्मचारी)</option>
+                        <option value="Admin">System Admin (प्रशासक)</option>
+                    </select>
+                    <button type="submit" class="bg-slate-800 text-white px-4 py-1.5 text-xs font-bold rounded hover:bg-slate-900 transition">खाता सुरक्षित गर्नुहोस</button>
+                </div>
+            </form>
+
+            <div>
+                <p class="text-xs font-bold text-gray-700 mb-2">सिस्टममा उपलब्ध सक्रिय प्रयोगकर्ताहरू:</p>
+                <div class="max-h-32 overflow-y-auto border rounded divide-y bg-gray-50 text-xs">
+                    <table class="w-full text-left">
+                        <thead class="bg-gray-100">
+                            <tr><th class="p-2">User ID</th><th class="p-2">Role</th></tr>
+                        </thead>
+                        <tbody id="users-table-list"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="flex justify-end pt-4 border-t mt-4">
+                <button type="button" onclick="toggleAdminPanel()" class="px-4 py-2 bg-gray-200 text-gray-700 text-xs font-bold rounded hover:bg-gray-300">बन्द गर्नुहोस्</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="handout-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center hidden z-50 p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-lg shadow-2xl max-w-md w-full p-6 border-t-8 border-green-600">
+            <h3 class="text-lg font-bold text-gray-800 mb-1">लाइसेन्स हस्तान्तरण रसिद भरपाई</h3>
+            <p id="modal-license-info" class="text-xs text-blue-700 font-semibold mb-4"></p>
             <form id="handout-form" class="space-y-4">
                 <input type="hidden" id="modal-license-id">
+                <div><label class="block text-xs font-bold text-gray-700">बुझ्ने व्यक्तिको नाम</label><input type="text" id="receiver-name" required class="w-full mt-1 p-2 border rounded-md text-sm focus:outline-none"></div>
+                <div><label class="block text-xs font-bold text-gray-700">सम्पर्क मोबाइल नम्बर</label><input type="tel" id="receiver-phone" required class="w-full mt-1 p-2 border rounded-md text-sm focus:outline-none" placeholder="98XXXXXXXX"></div>
                 <div>
-                    <label class="block text-xs font-medium text-gray-700">Receiver's Full Name</label>
-                    <input type="text" id="receiver-name" required class="w-full mt-1 p-2 border rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-gray-700">Mobile Phone Number</label>
-                    <input type="tel" id="receiver-phone" required class="w-full mt-1 p-2 border rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-gray-700 mb-1">Signature Device Method</label>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">डिजिटल हस्ताक्षर विधि</label>
                     <div class="grid grid-cols-2 gap-2 mb-2">
-                        <button type="button" id="btn-method-screen" onclick="setSignatureMethod('screen')" class="p-2 text-xs font-semibold rounded border bg-blue-50 border-blue-500 text-blue-700">🖥️ Screen / Touch</button>
-                        <button type="button" id="btn-method-wacom" onclick="setSignatureMethod('wacom')" class="p-2 text-xs font-semibold rounded border bg-white border-gray-300 text-gray-700">✍️ Wacom Pad</button>
+                        <button type="button" id="btn-method-screen" onclick="setSignatureMethod('screen')" class="p-2 text-xs font-bold rounded border text-center bg-blue-50 border-blue-500 text-blue-700">🖥️ कम्प्युटर स्क्रिन</button>
+                        <button type="button" id="btn-method-wacom" onclick="setSignatureMethod('wacom')" class="p-2 text-xs font-bold rounded border text-center bg-white border-gray-300 text-gray-700">✍️ Wacom Pad</button>
                     </div>
-                    <div id="container-screen-canvas" class="border rounded bg-gray-50">
-                        <canvas id="sig-canvas" width="400" height="150" class="w-full h-[150px] cursor-crosshair"></canvas>
-                    </div>
+                    <div id="container-screen-canvas" class="border-2 border-dashed border-slate-300 rounded bg-slate-50"><canvas id="sig-canvas" width="400" height="150" class="w-full h-[150px] cursor-crosshair"></canvas></div>
                     <div id="container-wacom-status" class="hidden border rounded p-4 bg-slate-50 text-center">
-                        <p id="wacom-text-status" class="text-xs text-amber-600">⚠️ Standing by for Wacom connection interface...</p>
-                        <button type="button" onclick="initializeWacomCapture()" class="mt-2 bg-slate-700 text-white px-3 py-1 rounded text-xs">Capture from Wacom Pad</button>
+                        <p id="wacom-text-status" class="text-xs text-amber-600 font-bold">⚠️ Wacom STU यन्त्रबाट हस्ताक्षर प्राप्त गर्न तयार छ...</p>
+                        <button type="button" onclick="initializeWacomCapture()" class="mt-2 bg-slate-800 text-white px-3 py-1.5 rounded text-xs">Wacom सिग्नेचर तान्नुहोस्</button>
                     </div>
                 </div>
-                <div class="flex justify-end gap-2 pt-2">
-                    <button type="button" onclick="closeModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md text-sm">Cancel</button>
-                    <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-md text-sm font-medium">Release Card</button>
+                <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                    <button type="button" onclick="closeModal()" class="px-4 py-2 bg-gray-200 text-gray-700 text-sm font-medium">बन्द गर्नुहोस्</button>
+                    <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-md text-sm font-bold shadow">वितरण पुष्टि गर्नुहोस्</button>
                 </div>
             </form>
         </div>
     </div>
 
     <script>
-        // REPLACE THIS STRING WITH YOUR DEPLOYED GOOGLE APPS SCRIPT WEB APP API URL!!!
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwaNQw_h-J-ea9bBFKUAuFo3LQd8gLhtFQnTURxd91dMdjroEGmLAC5BDOfPdVLP20B/exec";
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwUTvHmENjrdDuzVMXNLaPUvIasXDngsq--r40ZW_ws7ebXddqjurUjBTo5-IkPcQ9Z/exec";
 
         let licenses = [];
+        let systemUsers = [];
         const MAX_BOX_CAPACITY = 50;
         let selectedMethod = 'screen';
         let wacomSignatureBlob = null;
 
         const tableBody = document.getElementById('license-table-body');
+        const usersTableBody = document.getElementById('users-table-list');
         const searchInput = document.getElementById('search');
         const boxTrackerList = document.getElementById('box-tracker-list');
         const modal = document.getElementById('handout-modal');
+        const adminModal = document.getElementById('admin-modal');
         const excelInput = document.getElementById('excel-file-input');
         const canvas = document.getElementById('sig-canvas');
         const ctx = canvas.getContext('2d');
@@ -136,21 +173,64 @@
         canvas.addEventListener('mousemove', (e) => {
             if (!drawing) return;
             const rect = canvas.getBoundingClientRect();
-            ctx.lineWidth = 2; ctx.strokeStyle = '#000000'; ctx.lineCap = 'round';
+            ctx.lineWidth = 2.5; ctx.strokeStyle = '#000000'; ctx.lineCap = 'round';
             ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
             ctx.stroke(); ctx.beginPath(); ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
         });
 
         async function loadFromSheet() {
+            if (GOOGLE_SCRIPT_URL.includes("YOUR_DEPLOYED")) {
+                document.getElementById('db-status').innerText = "⚠️ लोकल मोड (No Google Sheet)";
+                return;
+            }
             try {
                 const response = await fetch(GOOGLE_SCRIPT_URL);
-                licenses = await response.json();
-                document.getElementById('db-status').innerText = "🌐 Connected to Google Sheet";
-                document.getElementById('db-status').className = "text-xs bg-green-700 px-3 py-1 rounded-full";
+                const masterPayload = await response.json();
+                licenses = masterPayload.licenses || [];
+                systemUsers = masterPayload.users || [];
+                document.getElementById('db-status').innerText = "🌐 गुगल सिट डेटाबेस जडान भयो";
+                document.getElementById('db-status').className = "text-xs bg-green-700 px-3 py-1 rounded-full text-white";
                 updateUI();
+                renderUsersList();
             } catch (err) {
-                document.getElementById('db-status').innerText = "❌ Connection Offline";
+                document.getElementById('db-status').innerText = "❌ नेटवर्क समस्या";
             }
+        }
+
+        // Create user listener form
+        document.getElementById('create-user-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('new-username').value.trim();
+            const password = document.getElementById('new-password').value.trim();
+            const role = document.getElementById('new-role').value;
+
+            document.getElementById('db-status').innerText = "⏳ नयाँ प्रयोगकर्ता सुरक्षित गरिँदैछ...";
+
+            if (!GOOGLE_SCRIPT_URL.includes("YOUR_DEPLOYED")) {
+                await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: "createUser", username: username, password: password, role: role })
+                });
+            }
+
+            alert(`प्रयोगकर्ता '${username}' डेटाबेसमा सुरक्षित भयो !`);
+            document.getElementById('create-user-form').reset();
+            loadFromSheet();
+        });
+
+        function renderUsersList() {
+            usersTableBody.innerHTML = "";
+            systemUsers.forEach(u => {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td class="p-2 font-mono">${u.username}</td><td class="p-2 font-bold text-blue-700">${u.role}</td>`;
+                usersTableBody.appendChild(row);
+            });
+        }
+
+        function toggleAdminPanel() {
+            adminModal.classList.toggle('hidden');
         }
 
         excelInput.addEventListener('change', function(e) {
@@ -162,19 +242,13 @@
                 const data = new Uint8Array(evt.target.result);
                 const workbook = XLSX.read(data, { type: 'array' });
                 const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-                
                 let uploadPayload = [];
 
                 rows.forEach(row => {
-                    // Match column labels found in your spreadsheet file
                     const licenseNo = row['DRIVING_LICENSE_NO'];
-                    const surname = row['SURNAME'] || '';
-                    const givenName = row['GIVEN_NAME'] || '';
-                    const fullName = `${givenName.trim()} ${surname.trim()}`.trim();
+                    const fullName = `${(row['GIVEN_NAME'] || '').trim()} ${(row['SURNAME'] || '').trim()}`.trim();
 
                     if (!licenseNo || !fullName) return;
-
-                    // Avoid duplicate entry checking locally
                     if (licenses.some(l => l.id.toString() === licenseNo.toString())) return;
 
                     const currentMetrics = getBoxMetrics();
@@ -182,25 +256,20 @@
 
                     const record = { id: licenseNo.toString().trim(), name: fullName, boxNumber: targetBox, status: "In Box" };
                     uploadPayload.push(record);
-                    licenses.push(record); // Push locally to keep box math accurate during the loop
+                    licenses.push(record);
                 });
 
-                if(uploadPayload.length === 0) {
-                    alert("No new unique license entries found to import.");
-                    return;
+                if(uploadPayload.length === 0) return;
+
+                if (!GOOGLE_SCRIPT_URL.includes("YOUR_DEPLOYED")) {
+                    await fetch(GOOGLE_SCRIPT_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: "import", rows: uploadPayload })
+                    });
                 }
-
-                document.getElementById('db-status').innerText = "⏳ Uploading batch entries directly to Cloud storage...";
-                
-                await fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: "import", rows: uploadPayload })
-                });
-
-                alert(`Successfully processed and boxed ${uploadPayload.length} records!`);
-                excelInput.value = "";
+                alert(`सफलतापूर्वक ${uploadPayload.length} रेकर्ड आयात गरियो !`);
                 loadFromSheet();
             };
             reader.readAsArrayBuffer(file);
@@ -213,21 +282,15 @@
             const phone = document.getElementById('receiver-phone').value;
             let signatureResult = selectedMethod === 'screen' ? canvas.toDataURL() : wacomSignatureBlob;
 
-            if(!signatureResult) {
-                alert("A digital signature is required to release the card document.");
-                return;
-            }
-
             modal.classList.add('hidden');
-            document.getElementById('db-status').innerText = "⏳ Saving handout signature...";
-
-            await fetch(GOOGLE_SCRIPT_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: "handout", id: id, receiver: receiver, phone: phone, sig: signatureResult })
-            });
-
+            if (!GOOGLE_SCRIPT_URL.includes("YOUR_DEPLOYED")) {
+                await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: "handout", id: id, receiver: receiver, phone: phone, sig: signatureResult })
+                });
+            }
             loadFromSheet();
         });
 
@@ -258,11 +321,8 @@
                 const totalInBox = boxMetrics[boxNum].total;
                 const percentage = (totalInBox / MAX_BOX_CAPACITY) * 100;
                 const div = document.createElement('div');
-                div.className = "p-2 border rounded bg-gray-50 text-xs";
-                div.innerHTML = `
-                    <div class="flex justify-between mb-1"><span>📦 Storage Container #${boxNum}</span><b>${totalInBox}/${MAX_BOX_CAPACITY} Cards</b></div>
-                    <div class="w-full bg-gray-200 h-1.5 rounded"><div class="h-1.5 rounded ${totalInBox >= MAX_BOX_CAPACITY ? 'bg-red-500' : 'bg-blue-600'}" style="width: ${percentage}%"></div></div>
-                `;
+                div.className = "p-2 border rounded bg-slate-50 text-xs shadow-sm";
+                div.innerHTML = `<div><span>📦 लाइसेन्स बक्स नं #${boxNum}</span><b>${totalInBox}/${MAX_BOX_CAPACITY}</b></div>`;
                 boxTrackerList.appendChild(div);
             });
 
@@ -270,19 +330,17 @@
                 if (filterText) {
                     const matchName = license.name.toLowerCase().includes(filterText.toLowerCase());
                     const matchId = license.id.toLowerCase().includes(filterText.toLowerCase());
-                    const matchBox = license.boxNumber.toString() === filterText.trim();
-                    if (!matchName && !matchId && !matchBox) return;
+                    if (!matchName && !matchId) return;
                 }
-
                 const row = document.createElement('tr');
-                row.className = "hover:bg-gray-50 text-xs sm:text-sm";
+                row.className = "hover:bg-slate-50 text-xs sm:text-sm";
                 row.innerHTML = `
-                    <td class="p-3 font-semibold text-blue-600">Box #${license.boxNumber}</td>
-                    <td class="p-3 font-mono text-gray-600">${license.id}</td>
-                    <td class="p-3 font-medium text-gray-900">${license.name}</td>
-                    <td class="p-3"><span class="px-2 py-0.5 rounded-full text-xs font-semibold ${license.status === 'Distributed' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}">${license.status}</span></td>
+                    <td class="p-3 font-bold text-red-700">बक्स नं ${license.boxNumber}</td>
+                    <td class="p-3 font-mono text-slate-600">${license.id}</td>
+                    <td class="p-3 font-semibold text-slate-900">${license.name}</td>
+                    <td class="p-3"><span class="px-2 py-0.5 rounded-full text-xs font-semibold ${license.status === 'Distributed' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}">${license.status === 'In Box' ? '📥 बक्समा छ' : '✅ बुझिलियो'}</span></td>
                     <td class="p-3 text-right">
-                        ${license.status === 'In Box' ? `<button type="button" onclick="openHandoutModal('${license.id}', '${license.name}')" class="bg-blue-600 text-white px-3 py-1 rounded text-xs font-medium hover:bg-blue-700 shadow-sm">Hand Out</button>` : `<span class="text-gray-400 text-xs italic">Collected</span>`}
+                        ${license.status === 'In Box' ? `<button type="button" onclick="openHandoutModal('${license.id}', '${license.name}')" class="bg-red-700 text-white px-3 py-1 rounded text-xs font-semibold hover:bg-red-800 shadow">बुझाउनुहोस्</button>` : `<span class="text-gray-400 text-xs italic">वितरण भयो</span>`}
                     </td>
                 `;
                 tableBody.appendChild(row);
@@ -296,7 +354,7 @@
 
         function openHandoutModal(id, licenseeName) {
             document.getElementById('modal-license-id').value = id;
-            document.getElementById('modal-license-info').innerText = `License Document Ref: ${id} Name: ${licenseeName}`;
+            document.getElementById('modal-license-info').innerText = `लाइसेन्स नं: ${id} | नाम: ${licenseeName}`;
             document.getElementById('receiver-name').value = licenseeName;
             modal.classList.remove('hidden');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -305,7 +363,6 @@
         }
 
         function closeModal() { modal.classList.add('hidden'); }
-
         function setSignatureMethod(method) {
             selectedMethod = method;
             if (method === 'screen') {
@@ -316,10 +373,9 @@
                 document.getElementById('container-wacom-status').classList.remove('hidden');
             }
         }
-
         function initializeWacomCapture() {
             wacomSignatureBlob = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."; 
-            document.getElementById('wacom-text-status').innerText = "✅ Signature Received from Wacom Device Hardware Pad!";
+            document.getElementById('wacom-text-status').innerText = "✅ Wacom यन्त्रबाट हस्ताक्षर प्राप्त भयो !";
         }
 
         searchInput.addEventListener('input', (e) => updateUI(e.target.value));
