@@ -21,7 +21,7 @@
             </div>
             <div class="flex flex-col items-end gap-1">
                 <span id="db-status" class="text-xs bg-amber-600 px-3 py-1 rounded-full font-semibold animate-pulse shadow">डेटाबेस जडान हुँदैछ...</span>
-                <button onclick="toggleAdminPanel()" class="text-xs bg-slate-800 hover:bg-slate-950 text-white px-2 py-1 rounded font-bold transition">👤 Admin Panel / खाता व्यवस्थापन</button>
+                <button onclick="openAdminGate()" class="text-xs bg-slate-800 hover:bg-slate-950 text-white px-2.5 py-1.5 rounded font-bold transition shadow-sm border border-slate-700">👤 Admin Panel / खाता व्यवस्थापन</button>
             </div>
         </div>
     </nav>
@@ -106,7 +106,7 @@
                 <p class="text-xs font-bold text-gray-700 mb-2">सिस्टममा उपलब्ध सक्रिय प्रयोगकर्ताहरू:</p>
                 <div class="max-h-32 overflow-y-auto border rounded divide-y bg-gray-50 text-xs">
                     <table class="w-full text-left">
-                        <thead class="bg-gray-100">
+                        <thead class="bg-gray-100 text-slate-600">
                             <tr><th class="p-2">User ID</th><th class="p-2">Role</th></tr>
                         </thead>
                         <tbody id="users-table-list"></tbody>
@@ -115,7 +115,7 @@
             </div>
 
             <div class="flex justify-end pt-4 border-t mt-4">
-                <button type="button" onclick="toggleAdminPanel()" class="px-4 py-2 bg-gray-200 text-gray-700 text-xs font-bold rounded hover:bg-gray-300">बन्द गर्नुहोस्</button>
+                <button type="button" onclick="closeAdminPanel()" class="px-4 py-2 bg-gray-200 text-gray-700 text-xs font-bold rounded hover:bg-gray-300">बन्द गर्नुहोस्</button>
             </div>
         </div>
     </div>
@@ -149,10 +149,11 @@
     </div>
 
     <script>
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwUTvHmENjrdDuzVMXNLaPUvIasXDngsq--r40ZW_ws7ebXddqjurUjBTo5-IkPcQ9Z/exec";
+        // PASTE YOUR DEPLOYED APPS SCRIPT URL LINK HERE
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyLSDJZai2egpK7ky3UXwKyD-N9__wl1crqYHRx9UggtJncKDAQ-_Xm6NQeiaWgaNFG/exec";
 
         let licenses = [];
-        let systemUsers = [];
+        let systemUsers = [{ username: "admin", role: "Admin" }]; // Hardcoded fallback defaults
         const MAX_BOX_CAPACITY = 50;
         let selectedMethod = 'screen';
         let wacomSignatureBlob = null;
@@ -180,24 +181,42 @@
 
         async function loadFromSheet() {
             if (GOOGLE_SCRIPT_URL.includes("YOUR_DEPLOYED")) {
-                document.getElementById('db-status').innerText = "⚠️ लोकल मोड (No Google Sheet)";
+                document.getElementById('db-status').innerText = "⚠️ लोकल मोड (No Google Sheet Link)";
+                renderUsersList();
                 return;
             }
             try {
                 const response = await fetch(GOOGLE_SCRIPT_URL);
                 const masterPayload = await response.json();
                 licenses = masterPayload.licenses || [];
-                systemUsers = masterPayload.users || [];
+                
+                // Keep default fallback user always available alongside cloud users
+                systemUsers = [{ username: "admin", role: "Admin" }, ...(masterPayload.users || [])];
+                
                 document.getElementById('db-status').innerText = "🌐 गुगल सिट डेटाबेस जडान भयो";
-                document.getElementById('db-status').className = "text-xs bg-green-700 px-3 py-1 rounded-full text-white";
+                document.getElementById('db-status').className = "text-xs bg-green-700 px-3 py-1 rounded-full text-white font-medium";
                 updateUI();
                 renderUsersList();
             } catch (err) {
-                document.getElementById('db-status').innerText = "❌ नेटवर्क समस्या";
+                document.getElementById('db-status').innerText = "❌ नेटवर्क समस्या (Offline)";
             }
         }
 
-        // Create user listener form
+        // Gatekeeper Login Check
+        function openAdminGate() {
+            const typedUser = prompt("Enter Admin Username:");
+            const typedPass = prompt("Enter Admin Password:");
+            
+            // Validate directly against your required credentials
+            if (typedUser === "admin" && typedPass === "522051") {
+                adminModal.classList.remove('hidden');
+            } else {
+                alert("अस्वीकृत! पासवर्ड मिलेन । (Access Denied!)");
+            }
+        }
+
+        function closeAdminPanel() { adminModal.classList.add('hidden'); }
+
         document.getElementById('create-user-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const username = document.getElementById('new-username').value.trim();
@@ -213,6 +232,9 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: "createUser", username: username, password: password, role: role })
                 });
+            } else {
+                // If working in offline testing environment, push mock structure
+                systemUsers.push({ username: username, role: role });
             }
 
             alert(`प्रयोगकर्ता '${username}' डेटाबेसमा सुरक्षित भयो !`);
@@ -224,13 +246,10 @@
             usersTableBody.innerHTML = "";
             systemUsers.forEach(u => {
                 const row = document.createElement('tr');
-                row.innerHTML = `<td class="p-2 font-mono">${u.username}</td><td class="p-2 font-bold text-blue-700">${u.role}</td>`;
+                row.className = "border-b border-gray-100 hover:bg-gray-100";
+                row.innerHTML = `<td class="p-2 font-mono">${u.username}</td><td class="p-2 font-bold text-red-700">${u.role}</td>`;
                 usersTableBody.appendChild(row);
             });
-        }
-
-        function toggleAdminPanel() {
-            adminModal.classList.toggle('hidden');
         }
 
         excelInput.addEventListener('change', function(e) {
