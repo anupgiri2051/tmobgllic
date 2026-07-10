@@ -7,97 +7,114 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
-<body class="bg-gray-100 font-sans">
+<body class="bg-gray-100 font-sans tracking-tight">
 
-    <!-- Official Government Header Banner -->
-    <nav class="bg-red-700 text-white p-4 shadow-md border-b-4 border-blue-800">
-        <div class="container mx-auto flex flex-col sm:flex-row justify-between items-center gap-3">
-            <div class="flex items-center gap-4">
-                <img src="logo.jpg" alt="Government Logo" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/2/23/Emblem_of_Nepal.svg'" class="h-16 w-auto object-contain bg-white p-1 rounded">
+    <div id="gatekeeper-lockout" class="fixed inset-0 bg-slate-900 flex items-center justify-center z-[100] p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-8 border-t-8 border-red-700 text-center">
+            <img src="logo.jpg" alt="Nepal Gov Logo" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/2/23/Emblem_of_Nepal.svg'" class="h-20 mx-auto mb-4 bg-white p-1 rounded">
+            <h2 class="text-xl font-bold text-gray-800">यातायात व्यवस्था कार्यालय, बागलुङ</h2>
+            <p class="text-xs text-gray-500 mt-1 mb-6">स्मार्ट अनुमति पत्र बक्स प्रणाली (प्रणाली पहुँच नियन्त्रण)</p>
+            
+            <form id="gatekeeper-form" class="space-y-4 text-left">
                 <div>
-                    <p class="text-xs font-bold uppercase tracking-wide text-red-100">गण्डकी प्रदेश सरकार</p>
-                    <p class="text-xs text-red-200 font-medium">भौतिक पूर्वाधार विकास तथा यातायात व्यवस्था मन्त्रालय</p>
-                    <h1 class="text-xl font-bold text-white tracking-tight">यातायात व्यवस्था कार्यालय, बागलुङ</h1>
+                    <label class="block text-xs font-bold text-gray-700 uppercase">User ID / प्रयोगकर्ता नाम</label>
+                    <input type="text" id="gate-username" required class="w-full mt-1 p-3 border-2 border-slate-200 rounded-lg text-sm focus:outline-none focus:border-red-700 font-mono" placeholder="e.g., admin">
                 </div>
-            </div>
-            <div class="flex flex-col items-end gap-1">
-                <span id="db-status" class="text-xs bg-amber-600 px-3 py-1 rounded-full font-semibold animate-pulse shadow">डेटाबेस जडान हुँदैछ...</span>
-                <button onclick="openAdminGate()" class="text-xs bg-slate-800 hover:bg-slate-950 text-white px-2.5 py-1.5 rounded font-bold transition shadow-sm border border-slate-700">👤 Admin Panel / खाता व्यवस्थापन</button>
-            </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 uppercase">Password / पासवर्ड</label>
+                    <input type="password" id="gate-password" required class="w-full mt-1 p-3 border-2 border-slate-200 rounded-lg text-sm focus:outline-none focus:border-red-700 font-mono" placeholder="••••••">
+                </div>
+                <button type="submit" class="w-full bg-red-700 hover:bg-red-800 text-white font-bold py-3 rounded-lg text-sm shadow-md transition duration-150">सिस्टम भित्र जानुहोस् (Login)</button>
+            </form>
+            <p id="gate-error" class="text-xs text-red-600 font-bold mt-3 hidden">⚠️ प्रविष्टि गरिएको विवरण मिलेन ! पुनः प्रयास गर्नुहोस् ।</p>
         </div>
-    </nav>
+    </div>
 
-    <div class="container mx-auto p-6">
-        
-        <!-- Metrics Dashboard -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div class="bg-white p-4 rounded-lg shadow border-l-4 border-slate-500">
-                <p class="text-gray-500 text-xs font-bold uppercase">जम्मा आयातित अनुमति पत्र (Total)</p>
-                <p id="total-count" class="text-2xl font-black text-gray-800">0</p>
-            </div>
-            <div class="bg-white p-4 rounded-lg shadow border-l-4 border-blue-500">
-                <p class="text-gray-500 text-xs font-bold uppercase">सक्रिय बक्स संख्या (Active Boxes)</p>
-                <p id="box-count" class="text-2xl font-black text-gray-800">0</p>
-            </div>
-            <div class="bg-white p-4 rounded-lg shadow border-l-4 border-yellow-500">
-                <p class="text-gray-500 text-xs font-bold uppercase">बक्समा बाँकी कार्ड (Remaining)</p>
-                <p id="pending-count" class="text-2xl font-black text-gray-800">0</p>
-            </div>
-            <div class="bg-white p-4 rounded-lg shadow border-l-4 border-green-500">
-                <p class="text-gray-500 text-xs font-bold uppercase">वितरण भइसकेको (Distributed)</p>
-                <p id="distributed-count" class="text-2xl font-black text-green-700">0</p>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <!-- Left Controls Row -->
-            <div class="space-y-6">
-                <!-- Data file bulk import -->
-                <div class="bg-white p-5 rounded-lg shadow border border-slate-200">
-                    <h2 class="text-md font-bold text-slate-800 mb-1 flex items-center gap-1.5">📊 नयाँ ब्याच आयात (Bulk Import)</h2>
-                    <p class="text-xs text-gray-500 mb-4">मुद्रण भएर आएको लाइसेन्स Excel/CSV फाइल यहाँबाट अपलोड गर्नुहोस् ।</p>
-                    <input type="file" id="excel-file-input" accept=".xlsx, .xls, .csv" class="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-red-700 file:text-white hover:file:bg-red-800 cursor-pointer shadow-sm" />
+    <div id="main-application-interface" class="invisible">
+        <nav class="bg-red-700 text-white p-4 shadow-md border-b-4 border-blue-800">
+            <div class="container mx-auto flex flex-col sm:flex-row justify-between items-center gap-3">
+                <div class="flex items-center gap-4">
+                    <img src="logo.jpg" alt="Government Logo" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/2/23/Emblem_of_Nepal.svg'" class="h-16 w-auto object-contain bg-white p-1 rounded">
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-wide text-red-100">गण्डकी प्रदेश सरकार</p>
+                        <p class="text-xs text-red-200 font-medium">भौतिक पूर्वाधार विकास तथा यातायात व्यवस्था मन्त्रालय</p>
+                        <h1 class="text-xl font-bold text-white tracking-tight">यातायात व्यवस्था कार्यालय, बागलुङ</h1>
+                    </div>
                 </div>
-
-                <!-- Box Tracker Gauges -->
-                <div class="bg-white p-5 rounded-lg shadow border border-slate-200">
-                    <h2 class="text-md font-bold text-slate-800 mb-3">📦 दराज बक्स क्षमता स्थिति (Max 50/Box)</h2>
-                    <div id="box-tracker-list" class="space-y-3 max-h-60 overflow-y-auto pr-1"></div>
+                <div class="flex flex-col sm:flex-row items-center gap-3">
+                    <span id="db-status" class="text-xs bg-amber-600 px-3 py-1 rounded-full font-semibold animate-pulse shadow">डेटाबेस जडान हुँदैछ...</span>
+                    <button onclick="openAdminPanel()" class="text-xs bg-slate-800 hover:bg-slate-950 text-white px-3 py-2 rounded-md font-bold transition shadow border border-slate-700">👥 खाता व्यवस्थापन (User Settings)</button>
+                    <button onclick="window.location.reload()" class="text-xs bg-red-900 hover:bg-black text-white px-2.5 py-2 rounded-md font-bold transition">🔒 प्रस्थान (Logout)</button>
                 </div>
             </div>
+        </nav>
 
-            <!-- Right Data Display Queue -->
-            <div class="lg:col-span-2 bg-white p-5 rounded-lg shadow border border-slate-200">
-                <div class="mb-4">
-                    <input type="text" id="search" placeholder="🔍 लाइसेन्स नम्बर, नाम, बक्स वा बुझ्नेको मोबाइलबाट खोज्नुहोस्..." class="w-full p-3 border-2 border-slate-200 rounded-md text-sm focus:outline-none focus:border-red-600">
+        <div class="container mx-auto p-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div class="bg-white p-4 rounded-lg shadow border-l-4 border-slate-500">
+                    <p class="text-gray-500 text-xs font-bold uppercase">जम्मा आयातित अनुमति पत्र (Total)</p>
+                    <p id="total-count" class="text-2xl font-black text-gray-800">0</p>
                 </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-slate-100 text-slate-700 uppercase text-xs border-b border-slate-200">
-                                <th class="p-3">बक्स नं (Box)</th>
-                                <th class="p-3">लाइसेन्स नं.</th>
-                                <th class="p-3">चालकको नाम</th>
-                                <th class="p-3">बुझिलिने विवरण (Handout Details)</th>
-                                <th class="p-3 text-right">कार्य (Action)</th>
-                            </tr>
-                        </thead>
-                        <tbody id="license-table-body" class="text-gray-700 text-sm divide-y divide-slate-100"></tbody>
-                    </table>
+                <div class="bg-white p-4 rounded-lg shadow border-l-4 border-blue-500">
+                    <p class="text-gray-500 text-xs font-bold uppercase">सक्रिय बक्स संख्या (Active Boxes)</p>
+                    <p id="box-count" class="text-2xl font-black text-gray-800">0</p>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow border-l-4 border-yellow-500">
+                    <p class="text-gray-500 text-xs font-bold uppercase">बक्समा बाँकी कार्ड (Remaining)</p>
+                    <p id="pending-count" class="text-2xl font-black text-gray-800">0</p>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow border-l-4 border-green-500">
+                    <p class="text-gray-500 text-xs font-bold uppercase">वितरण भइसकेको (Distributed)</p>
+                    <p id="distributed-count" class="text-2xl font-black text-green-700">0</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="space-y-6">
+                    <div class="bg-white p-5 rounded-lg shadow border border-slate-200">
+                        <h2 class="text-md font-bold text-slate-800 mb-1 flex items-center gap-1.5">📊 नयाँ ब्याच आयात (Bulk Import)</h2>
+                        <p class="text-xs text-gray-500 mb-4">मुद्रण भएर आएको लाइसेन्स Excel/CSV फाइल यहाँबाट अपलोड गर्नुहोस् ।</p>
+                        <input type="file" id="excel-file-input" accept=".xlsx, .xls, .csv" class="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-red-700 file:text-white hover:file:bg-red-800 cursor-pointer shadow-sm" />
+                    </div>
+
+                    <div class="bg-white p-5 rounded-lg shadow border border-slate-200">
+                        <h2 class="text-md font-bold text-slate-800 mb-3">📦 दराज बक्स क्षमता स्थिति (Max 50/Box)</h2>
+                        <div id="box-tracker-list" class="space-y-3 max-h-60 overflow-y-auto pr-1"></div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-2 bg-white p-5 rounded-lg shadow border border-slate-200">
+                    <div class="mb-4">
+                        <input type="text" id="search" placeholder="🔍 लाइसेन्स नम्बर, चालकको नाम, बक्स नम्बर वा बुझिलिनेको मोबाइल नम्बरबाट खोज्नुहोस्..." class="w-full p-3 border-2 border-slate-200 rounded-lg text-sm focus:outline-none focus:border-red-600">
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-700 uppercase text-xs border-b border-slate-200">
+                                    <th class="p-3">बक्स नं (Box)</th>
+                                    <th class="p-3">लाइसेन्स नं.</th>
+                                    <th class="p-3">चालकको नाम</th>
+                                    <th class="p-3">बुझिलिने विवरण र सम्पर्क (Handout Details)</th>
+                                    <th class="p-3 text-right">कार्य (Action)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="license-table-body" class="text-gray-700 text-sm divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- ADMIN USER ACCOUNT MANAGEMENT PANEL MODAL -->
     <div id="admin-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center hidden z-50 p-4 backdrop-blur-sm">
         <div class="bg-white rounded-lg shadow-2xl max-w-lg w-full p-6 border-t-8 border-slate-800">
             <h3 class="text-lg font-bold text-gray-800 mb-2">👤 कर्मचारी प्रयोगकर्ता खाता व्यवस्थापन (User Management)</h3>
+            
             <form id="create-user-form" class="bg-slate-50 p-3 rounded border mb-4 space-y-3">
                 <p class="text-xs font-bold text-slate-700">नयाँ खाता थप्नुहोस् (Create User Account)</p>
                 <div class="grid grid-cols-2 gap-2">
-                    <input type="text" id="new-username" required placeholder="प्रयोगकर्ताको नाम (Username)" class="p-2 border text-xs rounded focus:outline-none">
-                    <input type="password" id="new-password" required placeholder="पासवर्ड (Password)" class="p-2 border text-xs rounded focus:outline-none">
+                    <input type="text" id="new-username" required placeholder="प्रयोगकर्ताको नाम" class="p-2 border text-xs rounded focus:outline-none">
+                    <input type="password" id="new-password" required placeholder="पासवर्ड" class="p-2 border text-xs rounded focus:outline-none">
                 </div>
                 <div class="flex justify-between items-center">
                     <select id="new-role" class="p-1.5 border text-xs bg-white rounded focus:outline-none">
@@ -107,6 +124,7 @@
                     <button type="submit" class="bg-slate-800 text-white px-4 py-1.5 text-xs font-bold rounded hover:bg-slate-900 transition">खाता सुरक्षित गर्नुहोस</button>
                 </div>
             </form>
+
             <div>
                 <p class="text-xs font-bold text-gray-700 mb-2">सिस्टममा उपलब्ध सक्रिय प्रयोगकर्ताहरू:</p>
                 <div class="max-h-32 overflow-y-auto border rounded divide-y bg-gray-50 text-xs">
@@ -124,25 +142,33 @@
         </div>
     </div>
 
-    <!-- PUBLIC HANDOUT MODAL -->
     <div id="handout-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center hidden z-50 p-4 backdrop-blur-sm">
         <div class="bg-white rounded-lg shadow-2xl max-w-md w-full p-6 border-t-8 border-green-600">
             <h3 class="text-lg font-bold text-gray-800 mb-1">लाइसेन्स हस्तान्तरण रसिद भरपाई</h3>
             <p id="modal-license-info" class="text-xs text-blue-700 font-semibold mb-4"></p>
+            
             <form id="handout-form" class="space-y-4">
                 <input type="hidden" id="modal-license-id">
-                <div><label class="block text-xs font-bold text-gray-700">बुझ्ने व्यक्तिको नाम</label><input type="text" id="receiver-name" required class="w-full mt-1 p-2 border rounded-md text-sm focus:outline-none"></div>
-                <div><label class="block text-xs font-bold text-gray-700">सम्पर्क मोबाइल नम्बर</label><input type="tel" id="receiver-phone" required class="w-full mt-1 p-2 border rounded-md text-sm focus:outline-none" placeholder="98XXXXXXXX"></div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700">बुझ्ने व्यक्तिको नाम (Receiver Name)</label>
+                    <input type="text" id="receiver-name" required class="w-full mt-1 p-2 border rounded-md text-sm focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700">सम्पर्क मोबाइल नम्बर (Mobile Number)</label>
+                    <input type="tel" id="receiver-phone" required class="w-full mt-1 p-2 border rounded-md text-sm focus:outline-none font-mono" placeholder="98XXXXXXXX">
+                </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-700 mb-1">डिजिटल हस्ताक्षर विधि</label>
                     <div class="grid grid-cols-2 gap-2 mb-2">
                         <button type="button" id="btn-method-screen" onclick="setSignatureMethod('screen')" class="p-2 text-xs font-bold rounded border text-center bg-blue-50 border-blue-500 text-blue-700">🖥️ कम्प्युटर स्क्रिन</button>
                         <button type="button" id="btn-method-wacom" onclick="setSignatureMethod('wacom')" class="p-2 text-xs font-bold rounded border text-center bg-white border-gray-300 text-gray-700">✍️ Wacom Pad</button>
                     </div>
-                    <div id="container-screen-canvas" class="border-2 border-dashed border-slate-300 rounded bg-slate-50"><canvas id="sig-canvas" width="400" height="150" class="w-full h-[150px] cursor-crosshair"></canvas></div>
+                    <div id="container-screen-canvas" class="border-2 border-dashed border-slate-300 rounded bg-slate-50">
+                        <canvas id="sig-canvas" width="400" height="150" class="w-full h-[150px] cursor-crosshair"></canvas>
+                    </div>
                     <div id="container-wacom-status" class="hidden border rounded p-4 bg-slate-50 text-center">
                         <p id="wacom-text-status" class="text-xs text-amber-600 font-bold">⚠️ Wacom STU यन्त्रबाट हस्ताक्षर प्राप्त गर्न तयार छ...</p>
-                        <button type="button" onclick="initializeWacomCapture()" class="mt-2 bg-slate-800 text-white px-3 py-1.5 rounded text-xs">Wacom तान्नुहोस्</button>
+                        <button type="button" onclick="initializeWacomCapture()" class="mt-2 bg-slate-800 text-white px-3 py-1.5 rounded text-xs">Wacom हस्ताक्षर खिच्नुहोस्</button>
                     </div>
                 </div>
                 <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
@@ -153,7 +179,6 @@
         </div>
     </div>
 
-    <!-- SIGNATURE VIEWER POPUP MODAL -->
     <div id="sig-viewer-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-50 p-4">
         <div class="bg-white rounded-lg p-5 max-w-sm w-full text-center shadow-2xl">
             <h4 class="text-sm font-bold text-gray-800 mb-3">डिजिटल हस्ताक्षर प्रतिलिपि (Captured Signature)</h4>
@@ -165,7 +190,8 @@
     </div>
 
     <script>
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzEu-ClSIsWTNeuR8RNgno5fxTaGEuWNmAT90pxzPDnDSwB8Jtfcc-WIMjM-EINans2/exec";
+        // PASTE YOUR DEPLOYED APPS SCRIPT WEB URL LINK HERE
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyKE_AW0l1cBLNeFjUtLVqzxNb4yVmFh9WTYuBtQlv7P9ojCmjICGiLwvrXPTjqCLcU/exec";
 
         let licenses = [];
         let systemUsers = [{ username: "admin", role: "Admin" }]; 
@@ -185,6 +211,22 @@
         const ctx = canvas.getContext('2d');
         let drawing = false;
 
+        // Gatekeeper Login Verification Handler
+        document.getElementById('gatekeeper-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const u = document.getElementById('gate-username').value.trim();
+            const p = document.getElementById('gate-password').value.trim();
+
+            if (u === "admin" && p === "522051") {
+                document.getElementById('gatekeeper-lockout').classList.add('hidden');
+                const mainApp = document.getElementById('main-application-interface');
+                mainApp.classList.remove('invisible');
+                loadFromSheet(); // Fetch and refresh view context data loop
+            } else {
+                document.getElementById('gate-error').classList.remove('hidden');
+            }
+        });
+
         canvas.addEventListener('mousedown', () => drawing = true);
         canvas.addEventListener('mouseup', () => { drawing = false; ctx.beginPath(); });
         canvas.addEventListener('mousemove', (e) => {
@@ -197,7 +239,7 @@
 
         async function loadFromSheet() {
             if (GOOGLE_SCRIPT_URL.includes("YOUR_DEPLOYED")) {
-                document.getElementById('db-status').innerText = "⚠️ लोकल मोड (No Google Sheet Link)";
+                document.getElementById('db-status').innerText = "⚠️ लोकल मोड (No Cloud DB)";
                 renderUsersList(); updateUI(); return;
             }
             try {
@@ -213,16 +255,7 @@
             }
         }
 
-        function openAdminGate() {
-            const typedUser = prompt("Enter Admin Username:");
-            const typedPass = prompt("Enter Admin Password:");
-            if (typedUser === "admin" && typedPass === "522051") {
-                adminModal.classList.remove('hidden');
-            } else {
-                alert("अस्वीकृत! पासवर्ड मिलेन ।");
-            }
-        }
-
+        function openAdminPanel() { adminModal.classList.remove('hidden'); }
         function closeAdminPanel() { adminModal.classList.add('hidden'); }
 
         document.getElementById('create-user-form').addEventListener('submit', async (e) => {
@@ -361,24 +394,11 @@
                 }
                 
                 let handoutDetailsHTML = `<span class="text-amber-800 bg-amber-50 px-2 py-0.5 rounded text-xs font-semibold">📥 बक्समा सुरक्षित छ</span>`;
-                
                 if(license.status === "Distributed") {
-                    // FIX: Parse fields checking uppercase/lowercase variations from spreadsheet columns
-                    let finalReceiver = license.receiver || license.Receiver || license.receiverName || "";
-                    let finalPhone = license.phone || license.Phone || license.receiverPhone || "";
-                    
-                    // Fallback rule: If field is blank string or explicitly "N/A", use driver's name
-                    if(!finalReceiver || finalReceiver === "N/A" || finalReceiver.trim() === "") {
-                        finalReceiver = license.name; 
-                    }
-                    if(!finalPhone || finalPhone === "N/A" || finalPhone.trim() === "") {
-                        finalPhone = "सम्पर्क नखुलेको";
-                    }
-
                     handoutDetailsHTML = `
-                        <div class="text-xs space-y-0.5">
-                            <p class="font-bold text-slate-800">👤 बुझ्ने: ${finalReceiver}</p>
-                            <p class="text-gray-500 font-mono">📞 मो: ${finalPhone}</p>
+                        <div class="text-xs space-y-0.5 bg-green-50 p-1.5 border border-green-200 rounded">
+                            <p class="font-bold text-slate-800">👤 बुझ्ने: ${license.receiver || 'N/A'}</p>
+                            <p class="text-emerald-700 font-mono font-bold">📞 मो: ${license.phone || 'N/A'}</p>
                         </div>
                     `;
                 }
@@ -408,12 +428,11 @@
 
         function viewSignature(id) {
             const match = licenses.find(l => l.id === id);
-            let signatureData = match ? (match.sig || match.Sig || match.signature) : null;
-            if(match && signatureData) {
-                document.getElementById('viewer-sig-img').src = signatureData;
+            if(match && match.sig) {
+                document.getElementById('viewer-sig-img').src = match.sig;
                 sigViewerModal.classList.remove('hidden');
             } else {
-                alert("यो रेकردको लागि कुनै हस्ताक्षर इमेज फेला परेन ।");
+                alert("यो रेकर्डको लागि कुनै हस्ताक्षर इमेज फेला परेन ।");
             }
         }
 
@@ -427,6 +446,9 @@
             wacomSignatureBlob = null;
             setSignatureMethod('screen');
         }
+
+        document.getElementById('receiver-name').value = "";
+        document.getElementById('receiver-phone').value = "";
 
         function closeModal() { modal.classList.add('hidden'); }
         function setSignatureMethod(method) {
@@ -445,7 +467,6 @@
         }
 
         searchInput.addEventListener('input', (e) => updateUI(e.target.value));
-        loadFromSheet();
     </script>
 </body>
 </html>
