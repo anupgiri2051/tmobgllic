@@ -1,14 +1,20 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ne">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>स्मार्ट चालक अनुमति पत्र बक्स व्यवस्थापन प्रणाली - बागलुङ</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <link href="https://nepalidatetimepicker.github.io/nepali.datepicker/dist/css/nepali.datepicker.v4.0.1.min.css" rel="stylesheet" type="text/css"/>
+    <script src="https://nepalidatetimepicker.github.io/nepali.datepicker/dist/js/nepali.datepicker.v4.0.1.min.js" type="text/javascript"></script>
+    
+    <!-- Wacom SigCaptX SDK local bridge -->
+    <script src="https://localhost:8000/wgssSigCaptX/wgssSigCaptX.js"></script>
 </head>
 <body class="bg-gray-100 font-sans tracking-tight">
 
+    <!-- गेटकीपर लगइन स्क्रिन -->
     <div id="gatekeeper-lockout" class="fixed inset-0 bg-slate-900 flex items-center justify-center z-[100] p-4">
         <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-8 border-t-8 border-red-700 text-center">
             <img src="logo.jpg" alt="Nepal Gov Logo" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/2/23/Emblem_of_Nepal.svg'" class="h-20 mx-auto mb-4 bg-white p-1 rounded">
@@ -17,11 +23,11 @@
             
             <form id="gatekeeper-form" class="space-y-4 text-left">
                 <div>
-                    <label class="block text-xs font-bold text-gray-700 uppercase">User ID / प्रयोगकर्ता नाम</label>
-                    <input type="text" id="gate-username" required class="w-full mt-1 p-3 border-2 border-slate-200 rounded-lg text-sm focus:outline-none focus:border-red-700 font-mono" placeholder="e.g., admin">
+                    <label class="block text-xs font-bold text-gray-700 uppercase">प्रयोगकर्ता नाम (User ID)</label>
+                    <input type="text" id="gate-username" required class="w-full mt-1 p-3 border-2 border-slate-200 rounded-lg text-sm focus:outline-none focus:border-red-700 font-mono" placeholder="उदा: admin">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-gray-700 uppercase">Password / पासवर्ड</label>
+                    <label class="block text-xs font-bold text-gray-700 uppercase">पासवर्ड (Password)</label>
                     <input type="password" id="gate-password" required class="w-full mt-1 p-3 border-2 border-slate-200 rounded-lg text-sm focus:outline-none focus:border-red-700 font-mono" placeholder="••••••">
                 </div>
                 <button type="submit" class="w-full bg-red-700 hover:bg-red-800 text-white font-bold py-3 rounded-lg text-sm shadow-md transition duration-150">सिस्टम भित्र जानुहोस् (Login)</button>
@@ -30,6 +36,7 @@
         </div>
     </div>
 
+    <!-- मुख्य एप्लिकेसन स्क्रिन -->
     <div id="main-application-interface" class="invisible">
         <nav class="bg-red-700 text-white p-4 shadow-md border-b-4 border-blue-800">
             <div class="container mx-auto flex flex-col sm:flex-row justify-between items-center gap-3">
@@ -50,6 +57,7 @@
         </nav>
 
         <div class="container mx-auto p-6">
+            <!-- तथ्याङ्क कार्डहरू -->
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 <div class="bg-white p-4 rounded-lg shadow border-l-4 border-slate-500">
                     <p class="text-gray-500 text-xs font-bold uppercase">जम्मा आयातित अनुमति पत्र (Total)</p>
@@ -70,6 +78,7 @@
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- देब्रेपट्टिको ब्याच अपलोड र बक्स स्थिति -->
                 <div class="space-y-6">
                     <div class="bg-white p-5 rounded-lg shadow border border-slate-200">
                         <h2 class="text-md font-bold text-slate-800 mb-1 flex items-center gap-1.5">📊 नयाँ ब्याच आयात (Bulk Import)</h2>
@@ -78,14 +87,15 @@
                     </div>
 
                     <div class="bg-white p-5 rounded-lg shadow border border-slate-200">
-                        <h2 class="text-md font-bold text-slate-800 mb-3">📦 दराज बक्स क्षमता स्थिति (Max 50/Box)</h2>
+                        <h2 class="text-md font-bold text-slate-800 mb-3">📦 दराज बक्स क्षमता स्थिति (अधिकतम ५०/बक्स)</h2>
                         <div id="box-tracker-list" class="space-y-3 max-h-60 overflow-y-auto pr-1"></div>
                     </div>
                 </div>
 
+                <!-- दाहिनेपट्टिको मुख्य तालिका -->
                 <div class="lg:col-span-2 bg-white p-5 rounded-lg shadow border border-slate-200">
                     <div class="mb-4">
-                        <input type="text" id="search" placeholder="🔍 लाइसेन्स नम्बर, चालकको नाम, बक्स नम्बर वा बुझिलिनेको मोबाइल नम्बरबाट खोज्नुहोस्..." class="w-full p-3 border-2 border-slate-200 rounded-lg text-sm focus:outline-none focus:border-red-600">
+                        <input type="text" id="search" placeholder="🔍 लाइसेन्स नं., नाम, फोन वा बुझिलिएको नेपाली मिति (उदा: २०८१-०४-०६) बाट खोज्नुहोस्..." class="w-full p-3 border-2 border-slate-200 rounded-lg text-sm focus:outline-none focus:border-red-600">
                     </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse">
@@ -94,7 +104,7 @@
                                     <th class="p-3">बक्स नं (Box)</th>
                                     <th class="p-3">लाइसेन्स नं.</th>
                                     <th class="p-3">चालकको नाम</th>
-                                    <th class="p-3">बुझिलिने विवरण र सम्पर्क (Handout Details)</th>
+                                    <th class="p-3">बुझिलिने विवरण, सम्पर्क र मिति (Handout Details)</th>
                                     <th class="p-3 text-right">कार्य (Action)</th>
                                 </tr>
                             </thead>
@@ -106,6 +116,7 @@
         </div>
     </div>
 
+    <!-- प्रयोगकर्ता खाता व्यवस्थापन मोडल -->
     <div id="admin-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center hidden z-50 p-4 backdrop-blur-sm">
         <div class="bg-white rounded-lg shadow-2xl max-w-lg w-full p-6 border-t-8 border-slate-800">
             <h3 class="text-lg font-bold text-gray-800 mb-2">👤 कर्मचारी प्रयोगकर्ता खाता व्यवस्थापन (User Management)</h3>
@@ -142,6 +153,7 @@
         </div>
     </div>
 
+    <!-- लाइसेन्स हस्तान्तरण रसिद भरपाई मोडल -->
     <div id="handout-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center hidden z-50 p-4 backdrop-blur-sm">
         <div class="bg-white rounded-lg shadow-2xl max-w-md w-full p-6 border-t-8 border-green-600">
             <h3 class="text-lg font-bold text-gray-800 mb-1">लाइसेन्स हस्तान्तरण रसिद भरपाई</h3>
@@ -157,6 +169,12 @@
                     <label class="block text-xs font-bold text-gray-700">सम्पर्क मोबाइल नम्बर (Mobile Number)</label>
                     <input type="tel" id="receiver-phone" required class="w-full mt-1 p-2 border rounded-md text-sm focus:outline-none font-mono" placeholder="98XXXXXXXX">
                 </div>
+                
+                <div>
+                    <label class="block text-xs font-bold text-gray-700">बुझिलिएको मिति (नेपाली मिति - वि.सं. / B.S.)</label>
+                    <input type="text" id="nepali-date-input" required class="w-full mt-1 p-2 border rounded-md text-sm focus:outline-none font-mono bg-blue-50 border-blue-300 font-bold text-blue-900" placeholder="YYYY-MM-DD">
+                </div>
+
                 <div>
                     <label class="block text-xs font-bold text-gray-700 mb-1">डिजिटल हस्ताक्षर विधि</label>
                     <div class="grid grid-cols-2 gap-2 mb-2">
@@ -168,17 +186,21 @@
                     </div>
                     <div id="container-wacom-status" class="hidden border rounded p-4 bg-slate-50 text-center">
                         <p id="wacom-text-status" class="text-xs text-amber-600 font-bold">⚠️ Wacom STU यन्त्रबाट हस्ताक्षर प्राप्त गर्न तयार छ...</p>
-                        <button type="button" onclick="initializeWacomCapture()" class="mt-2 bg-slate-800 text-white px-3 py-1.5 rounded text-xs">Wacom हस्ताक्षर खिच्नुहोस्</button>
+                        <div id="wacom-preview-container" class="mt-2 hidden border p-1 bg-white rounded">
+                            <img id="wacom-sig-img" src="" alt="Wacom Signature Preview" class="max-h-24 mx-auto" />
+                        </div>
+                        <button type="button" onclick="initializeWacomCapture()" class="mt-2 bg-slate-800 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-black transition">Wacom हस्ताक्षर खिच्नुहोस्</button>
                     </div>
                 </div>
                 <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
-                    <button type="button" onclick="closeModal()" class="px-4 py-2 bg-gray-200 text-gray-700 text-sm font-medium">बन्द गर्नुहोस्</button>
-                    <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-md text-sm font-bold shadow">वितरण पुष्टि गर्नुहोस्</button>
+                    <button type="button" onclick="closeModal()" class="px-4 py-2 bg-gray-200 text-gray-700 text-sm font-medium rounded hover:bg-gray-300">बन्द गर्नुहोस्</button>
+                    <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-md text-sm font-bold shadow hover:bg-green-700 transition">वितरण पुष्टि गर्नुहोस्</button>
                 </div>
             </form>
         </div>
     </div>
 
+    <!-- हस्ताक्षर हेर्ने मोडल -->
     <div id="sig-viewer-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-50 p-4">
         <div class="bg-white rounded-lg p-5 max-w-sm w-full text-center shadow-2xl">
             <h4 class="text-sm font-bold text-gray-800 mb-3">डिजिटल हस्ताक्षर प्रतिलिपि (Captured Signature)</h4>
@@ -190,14 +212,17 @@
     </div>
 
     <script>
-        // PASTE YOUR DEPLOYED APPS SCRIPT WEB URL LINK HERE
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyKE_AW0l1cBLNeFjUtLVqzxNb4yVmFh9WTYuBtQlv7P9ojCmjICGiLwvrXPTjqCLcU/exec";
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzXQsOjCUMTssQA9hcpCJ7DlQOw6-oI10XKXRhecuJXIj_vEY2zTBM1CqosBD_hBAeE/exec";
 
         let licenses = [];
         let systemUsers = [{ username: "admin", role: "Admin" }]; 
         const MAX_BOX_CAPACITY = 50;
         let selectedMethod = 'screen';
         let wacomSignatureBlob = null;
+
+        // Wacom SigCaptX Global Objects
+        let sigCtl = null;
+        let dynCapt = null;
 
         const tableBody = document.getElementById('license-table-body');
         const usersTableBody = document.getElementById('users-table-list');
@@ -211,22 +236,76 @@
         const ctx = canvas.getContext('2d');
         let drawing = false;
 
+        // Nepali Date Picker & Wacom Initialization
+        window.onload = function() {
+            var dateInput = document.getElementById("nepali-date-input");
+            if(dateInput) {
+                dateInput.nepaliDatePicker({
+                    ndpYear: true,
+                    ndpMonth: true,
+                    ndpYearCount: 20,
+                    readOnlyInput: true
+                });
+            }
+
+            if (typeof wgssSignatureSDK !== "undefined") {
+                wgssSignatureSDK.running(function(running) {
+                    if (running) {
+                        sigCtl = new wgssSignatureSDK.SigCtl();
+                        dynCapt = new wgssSignatureSDK.DynamicCapture();
+                    }
+                });
+            }
+        };
+
         // Gatekeeper Login Verification Handler
-        document.getElementById('gatekeeper-form').addEventListener('submit', function(e) {
+        document.getElementById('gatekeeper-form').addEventListener('submit', async function(e) {
             e.preventDefault();
             const u = document.getElementById('gate-username').value.trim();
             const p = document.getElementById('gate-password').value.trim();
+            const errorEl = document.getElementById('gate-error');
+            
+            errorEl.innerText = "⏳ प्रमाणीकरण हुँदैछ, कृपया पर्खनुहोस्...";
+            errorEl.classList.remove('hidden');
+            errorEl.className = "text-xs text-amber-600 font-bold mt-3";
 
-            if (u === "admin" && p === "522051") {
-                document.getElementById('gatekeeper-lockout').classList.add('hidden');
-                const mainApp = document.getElementById('main-application-interface');
-                mainApp.classList.remove('invisible');
-                loadFromSheet(); // Fetch and refresh view context data loop
-            } else {
-                document.getElementById('gate-error').classList.remove('hidden');
+            if (GOOGLE_SCRIPT_URL.includes("YOUR_DEPLOYED")) {
+                if (u === "admin" && p === "522051") { enterSystem(); } else { showLoginError(); }
+                return;
+            }
+
+            try {
+                const response = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: "login", username: u, password: p })
+                });
+                const result = await response.json();
+
+                if (result.success) { enterSystem(); } else { showLoginError(); }
+            } catch (err) {
+                if (u === "admin" && p === "522051") {
+                    enterSystem();
+                } else {
+                    errorEl.innerText = "❌ नेटवर्क त्रुटि वा गलत विवरण !";
+                    errorEl.className = "text-xs text-red-600 font-bold mt-3";
+                }
             }
         });
 
+        function enterSystem() {
+            document.getElementById('gatekeeper-lockout').classList.add('hidden');
+            document.getElementById('main-application-interface').classList.remove('invisible');
+            loadFromSheet();
+        }
+
+        function showLoginError() {
+            const errorEl = document.getElementById('gate-error');
+            errorEl.innerText = "⚠️ प्रविष्टि गरिएको विवरण मिलेन ! पुनः प्रयास गर्नुहोस् ।";
+            errorEl.className = "text-xs text-red-600 font-bold mt-3";
+            errorEl.classList.remove('hidden');
+        }
+
+        // Canvas Controls
         canvas.addEventListener('mousedown', () => drawing = true);
         canvas.addEventListener('mouseup', () => { drawing = false; ctx.beginPath(); });
         canvas.addEventListener('mousemove', (e) => {
@@ -237,9 +316,10 @@
             ctx.stroke(); ctx.beginPath(); ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
         });
 
+        // Sync and Fetch Database
         async function loadFromSheet() {
             if (GOOGLE_SCRIPT_URL.includes("YOUR_DEPLOYED")) {
-                document.getElementById('db-status').innerText = "⚠️ लोकल मोड (No Cloud DB)";
+                document.getElementById('db-status').innerText = "⚠️ लोकल मोड (No Cloud DB Link)";
                 renderUsersList(); updateUI(); return;
             }
             try {
@@ -255,6 +335,7 @@
             }
         }
 
+        // User Accounts Panel Settings
         function openAdminPanel() { adminModal.classList.remove('hidden'); }
         function closeAdminPanel() { adminModal.classList.add('hidden'); }
 
@@ -267,11 +348,8 @@
             if (!GOOGLE_SCRIPT_URL.includes("YOUR_DEPLOYED")) {
                 await fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: "createUser", username: username, password: password, role: role })
                 });
-                systemUsers.push({ username: username, role: role });
             }
             alert(`प्रयोगकर्ता '${username}' सुरक्षित भयो !`);
             document.getElementById('create-user-form').reset();
@@ -288,6 +366,7 @@
             });
         }
 
+        // Excel Bulk File Operations
         excelInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -300,23 +379,21 @@
 
                 rows.forEach(row => {
                     const licenseNo = row['DRIVING_LICENSE_NO'];
-                    const fullName = `${(row['GIVEN_NAME'] || '').trim()} ${(row['SURNAME'] || '').trim()}`.trim();
+                    const fullName = row['NAME'] || `${(row['GIVEN_NAME'] || '').trim()} ${(row['SURNAME'] || '').trim()}`.trim();
                     if (!licenseNo || !fullName) return;
                     if (licenses.some(l => l.id.toString() === licenseNo.toString())) return;
 
                     const currentMetrics = getBoxMetrics();
                     const targetBox = getNextOpenBoxNumber(currentMetrics);
 
-                    const record = { id: licenseNo.toString().trim(), name: fullName, boxNumber: targetBox, status: "In Box", receiver: "", phone: "", sig: "" };
+                    const record = { id: licenseNo.toString().trim(), name: fullName, boxNumber: targetBox, status: "In Box", receiver: "", phone: "", sig: "", dateHanded: "" };
                     uploadPayload.push(record);
                     licenses.push(record);
                 });
 
-                if (!GOOGLE_SCRIPT_URL.includes("YOUR_DEPLOYED")) {
+                if (!GOOGLE_SCRIPT_URL.includes("YOUR_DEPLOYED") && uploadPayload.length > 0) {
                     await fetch(GOOGLE_SCRIPT_URL, {
                         method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ action: "import", rows: uploadPayload })
                     });
                 }
@@ -326,31 +403,32 @@
             reader.readAsArrayBuffer(file);
         });
 
+        // Handout Form Submission Handler (Saves strictly in Nepali B.S. Date)
         document.getElementById('handout-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = document.getElementById('modal-license-id').value;
             const receiver = document.getElementById('receiver-name').value;
             const phone = document.getElementById('receiver-phone').value;
+            const nepaliDateSelected = document.getElementById('nepali-date-input').value;
+            
             let signatureResult = selectedMethod === 'screen' ? canvas.toDataURL() : wacomSignatureBlob;
 
-            const match = licenses.find(l => l.id === id);
-            if(match) {
-                match.status = "Distributed";
-                match.receiver = receiver;
-                match.phone = phone;
-                match.sig = signatureResult;
+            if (!signatureResult) {
+                alert("कृपया हस्ताक्षर प्रदान गर्नुहोस् ।");
+                return;
             }
+            
+            // Format strictly as Nepali B.S. Date
+            const finalNepaliTimestamp = `${nepaliDateSelected} (वि.सं.)`;
 
             modal.classList.add('hidden');
             if (!GOOGLE_SCRIPT_URL.includes("YOUR_DEPLOYED")) {
                 await fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: "handout", id: id, receiver: receiver, phone: phone, sig: signatureResult })
+                    body: JSON.stringify({ action: "handout", id: id, receiver: receiver, phone: phone, sig: signatureResult, dateHanded: finalNepaliTimestamp })
                 });
             }
-            alert("लाइसेन्स वितरण रेकर्ड र डिजिटल हस्ताक्षर सुरक्षित गरियो ।");
+            alert("वितरण विवरण, नेपाली मिति र डिजिटल हस्ताक्षर सुरक्षित गरियो ।");
             loadFromSheet();
         });
 
@@ -372,6 +450,7 @@
             }
         }
 
+        // UI Core Grid Generation Update Loop
         function updateUI(filterText = "") {
             tableBody.innerHTML = "";
             const boxMetrics = getBoxMetrics();
@@ -390,15 +469,20 @@
                     const matchName = license.name.toLowerCase().includes(filterText.toLowerCase());
                     const matchId = license.id.toLowerCase().includes(filterText.toLowerCase());
                     const matchPhone = (license.phone || "").includes(filterText.trim());
-                    if (!matchName && !matchId && !matchPhone) return;
+                    const matchDate = (license.dateHanded || "").includes(filterText.trim());
+                    if (!matchName && !matchId && !matchPhone && !matchDate) return;
                 }
                 
                 let handoutDetailsHTML = `<span class="text-amber-800 bg-amber-50 px-2 py-0.5 rounded text-xs font-semibold">📥 बक्समा सुरक्षित छ</span>`;
+                
                 if(license.status === "Distributed") {
+                    let nepDateShow = license.dateHanded || 'N/A';
+                    
                     handoutDetailsHTML = `
-                        <div class="text-xs space-y-0.5 bg-green-50 p-1.5 border border-green-200 rounded">
-                            <p class="font-bold text-slate-800">👤 बुझ्ने: ${license.receiver || 'N/A'}</p>
-                            <p class="text-emerald-700 font-mono font-bold">📞 मो: ${license.phone || 'N/A'}</p>
+                        <div class="text-xs space-y-1 bg-green-50 p-2 border border-green-200 rounded shadow-sm">
+                            <p class="text-slate-800"><span class="text-gray-500 font-medium">👤 नाम:</span> <strong class="font-bold">${license.receiver || 'N/A'}</strong></p>
+                            <p class="text-emerald-700 font-mono"><span class="text-gray-500 font-medium">📞 सम्पर्क:</span> <strong>${license.phone || 'N/A'}</strong></p>
+                            <p class="text-blue-800 font-mono text-[11px] border-t border-green-200 pt-0.5 mt-0.5"><span class="text-gray-500 font-medium">📅 मिति (वि.सं.):</span> <strong>${nepDateShow}</strong></p>
                         </div>
                     `;
                 }
@@ -413,7 +497,7 @@
                     <td class="p-3 text-right">
                         ${license.status === 'In Box' ? 
                             `<button type="button" onclick="openHandoutModal('${license.id}', '${license.name}')" class="bg-red-700 text-white px-3 py-1 rounded text-xs font-semibold hover:bg-red-800 shadow">बुझाउनुहोस्</button>` : 
-                            `<button type="button" onclick="viewSignature('${license.id}')" class="bg-emerald-600 text-white px-2 py-1 rounded text-xs font-semibold hover:bg-emerald-700 shadow">📝 हस्ताक्षर हेर्नुहोस्</button>`
+                            `<button type="button" onclick="viewSignature('${license.id}')" class="bg-emerald-600 text-white px-2 py-1 rounded text-xs font-semibold hover:bg-emerald-700 shadow">📝 हस्ताक्षर</button>`
                         }
                     </td>
                 `;
@@ -432,38 +516,95 @@
                 document.getElementById('viewer-sig-img').src = match.sig;
                 sigViewerModal.classList.remove('hidden');
             } else {
-                alert("यो रेकर्डको लागि कुनै हस्ताक्षर इमेज फेला परेन ।");
+                alert("हस्ताक्षर इमेज फेला परेन ।");
             }
         }
 
         function closeSigViewer() { sigViewerModal.classList.add('hidden'); }
+        
         function openHandoutModal(id, licenseeName) {
             document.getElementById('modal-license-id').value = id;
             document.getElementById('modal-license-info').innerText = `लाइसेन्स नं: ${id} | नाम: ${licenseeName}`;
             document.getElementById('receiver-name').value = licenseeName;
+            document.getElementById('receiver-phone').value = "";
+            
+            const todayEng = new Date();
+            const todayNepObj = NepaliFunctions.ConvertToNepaliDate(todayEng.getFullYear(), todayEng.getMonth() + 1, todayEng.getDate());
+            const formattedNepaliDate = todayNepObj.year + '-' + String(todayNepObj.month).padStart(2, '0') + '-' + String(todayNepObj.day).padStart(2, '0');
+            
+            document.getElementById('nepali-date-input').value = formattedNepaliDate;
+            
             modal.classList.remove('hidden');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             wacomSignatureBlob = null;
+            document.getElementById('wacom-preview-container').classList.add('hidden');
+            document.getElementById('wacom-text-status').innerText = "⚠️ Wacom STU यन्त्रबाट हस्ताक्षर प्राप्त गर्न तयार छ...";
+            document.getElementById('wacom-text-status').className = "text-xs text-amber-600 font-bold";
             setSignatureMethod('screen');
         }
 
-        document.getElementById('receiver-name').value = "";
-        document.getElementById('receiver-phone').value = "";
-
         function closeModal() { modal.classList.add('hidden'); }
+        
         function setSignatureMethod(method) {
             selectedMethod = method;
             if (method === 'screen') {
                 document.getElementById('container-screen-canvas').classList.remove('hidden');
                 document.getElementById('container-wacom-status').classList.add('hidden');
+                document.getElementById('btn-method-screen').className = "p-2 text-xs font-bold rounded border text-center bg-blue-50 border-blue-500 text-blue-700";
+                document.getElementById('btn-method-wacom').className = "p-2 text-xs font-bold rounded border text-center bg-white border-gray-300 text-gray-700";
             } else {
                 document.getElementById('container-screen-canvas').classList.add('hidden');
                 document.getElementById('container-wacom-status').classList.remove('hidden');
+                document.getElementById('btn-method-wacom').className = "p-2 text-xs font-bold rounded border text-center bg-blue-50 border-blue-500 text-blue-700";
+                document.getElementById('btn-method-screen').className = "p-2 text-xs font-bold rounded border text-center bg-white border-gray-300 text-gray-700";
             }
         }
+        
+        // Live Wacom Capture Integration via STU-430 Pad
         function initializeWacomCapture() {
-            wacomSignatureBlob = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."; 
-            document.getElementById('wacom-text-status').innerText = "✅ Wacom यन्त्रबाट हस्ताक्षर प्राप्त भयो !";
+            if (!sigCtl || !dynCapt) {
+                alert("Wacom SigCaptX सेवा तयार छैन। कृपया Wacom STU Driver र SigCaptX स्थापना वा सुरु भएको पुष्टि गर्नुहोस्।");
+                return;
+            }
+
+            const receiverName = document.getElementById('receiver-name').value || "License Receiver";
+            const statusEl = document.getElementById('wacom-text-status');
+            statusEl.innerText = "⏳ Wacom STU-430 स्क्रिनमा हस्ताक्षर गर्नुहोस्...";
+            statusEl.className = "text-xs text-blue-600 font-bold";
+
+            var hash = new wgssSignatureSDK.Hash(wgssSignatureSDK.HashType.HashMD5);
+
+            dynCapt.Capture(sigCtl, receiverName, "License Handout Acceptance", hash, null, function(dynCaptV, sigObjV, status) {
+                if (status === wgssSignatureSDK.DynamicCaptureResult.DynCaptOK) {
+                    sigObjV.RenderBitmap(
+                        "png", 320, 160, 300, 
+                        0x000000, 0xFFFFFF, 
+                        wgssSignatureSDK.RBFlags.RenderOutputBase64 | wgssSignatureSDK.RBFlags.RenderColor32BPP,
+                        null, 
+                        function(sigObjV, bmpObj, status) {
+                            if (status === wgssSignatureSDK.ResponseStatus.OK) {
+                                wacomSignatureBlob = "data:image/png;base64," + bmpObj;
+                                
+                                const imgPreview = document.getElementById('wacom-sig-img');
+                                imgPreview.src = wacomSignatureBlob;
+                                document.getElementById('wacom-preview-container').classList.remove('hidden');
+                                
+                                statusEl.innerText = "✅ Wacom यन्त्रबाट हस्ताक्षर प्राप्त भयो !";
+                                statusEl.className = "text-xs text-green-700 font-bold";
+                            } else {
+                                statusEl.innerText = "❌ हस्ताक्षर इमेज रुपान्तरण गर्न सकिएन ।";
+                                statusEl.className = "text-xs text-red-600 font-bold";
+                            }
+                        }
+                    );
+                } else if (status === wgssSignatureSDK.DynamicCaptureResult.DynCaptCancel) {
+                    statusEl.innerText = "⚠️ हस्ताक्षर प्रक्रिया रद्द गरियो ।";
+                    statusEl.className = "text-xs text-amber-600 font-bold";
+                } else {
+                    statusEl.innerText = "❌ Wacom हस्ताक्षर खिच्न सकिएन (त्रुटि: " + status + ")";
+                    statusEl.className = "text-xs text-red-600 font-bold";
+                }
+            });
         }
 
         searchInput.addEventListener('input', (e) => updateUI(e.target.value));
