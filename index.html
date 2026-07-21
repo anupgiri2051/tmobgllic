@@ -92,11 +92,21 @@
                     </div>
                 </div>
 
-                <!-- तालिका -->
+                <!-- तालिका र खोजी बार -->
                 <div class="lg:col-span-2 bg-white p-5 rounded-lg shadow border border-slate-200">
-                    <div class="mb-4">
-                        <input type="text" id="search" placeholder="🔍 लाइसेन्स नं., नाम, फोन वा बुझिलिएको नेपाली मितिबाट खोज्नुहोस्..." class="w-full p-3 border-2 border-slate-200 rounded-lg text-sm focus:outline-none focus:border-red-600">
+                    <!-- खोजी बार विथ सर्च बटन -->
+                    <div class="mb-4 flex flex-col sm:flex-row gap-2">
+                        <div class="relative flex-1">
+                            <input type="text" id="search" placeholder="🔍 लाइसेन्स नं., नाम, फोन वा बुझिलिएको नेपाली मितिबाट खोज्नुहोस्..." class="w-full p-3 pr-8 border-2 border-slate-200 rounded-lg text-sm focus:outline-none focus:border-red-600">
+                        </div>
+                        <button type="button" id="search-btn" onclick="triggerSearch()" class="bg-red-700 hover:bg-red-800 text-white font-bold px-5 py-3 rounded-lg text-sm shadow transition duration-150 flex items-center justify-center gap-1">
+                            🔍 खोज्नुहोस्
+                        </button>
+                        <button type="button" id="reset-btn" onclick="resetSearch()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold px-4 py-3 rounded-lg text-sm transition hidden">
+                            पुनः सेट
+                        </button>
                     </div>
+
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse">
                             <thead>
@@ -212,7 +222,7 @@
     </div>
 
     <script>
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzvVn8FAcWfyQobQQRUiCezvqOwksxpoqZrvLU3ul5uGPh4pQcig0VXmRzGn8cRopvc/exec";
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwHcV-VBTi1nsUAnFtF58t9USFR_aAQuEJikjHjMiWu9Lc9ln4t9-AC_EzlOuRC-lBr/exec";
 
         let licenses = [];
         let systemUsers = [{ username: "admin", role: "Admin" }]; 
@@ -227,6 +237,7 @@
         const tableBody = document.getElementById('license-table-body');
         const usersTableBody = document.getElementById('users-table-list');
         const searchInput = document.getElementById('search');
+        const resetBtn = document.getElementById('reset-btn');
         const boxTrackerList = document.getElementById('box-tracker-list');
         const modal = document.getElementById('handout-modal');
         const adminModal = document.getElementById('admin-modal');
@@ -450,7 +461,7 @@
             }
         }
 
-        // Render UI Table
+        // Render UI Table & Filter Search Results
         function updateUI(filterText = "") {
             tableBody.innerHTML = "";
             const boxMetrics = getBoxMetrics();
@@ -464,13 +475,17 @@
                 boxTrackerList.appendChild(div);
             });
 
+            const query = filterText.trim().toLowerCase();
+
             licenses.forEach((license) => {
-                if (filterText) {
-                    const matchName = license.name.toLowerCase().includes(filterText.toLowerCase());
-                    const matchId = license.id.toLowerCase().includes(filterText.toLowerCase());
-                    const matchPhone = (license.phone || "").includes(filterText.trim());
-                    const matchDate = (license.dateHanded || "").includes(filterText.trim());
-                    if (!matchName && !matchId && !matchPhone && !matchDate) return;
+                if (query !== "") {
+                    const matchName = (license.name || "").toLowerCase().includes(query);
+                    const matchId = (license.id || "").toLowerCase().includes(query);
+                    const matchReceiver = (license.receiver || "").toLowerCase().includes(query);
+                    const matchPhone = (license.phone || "").toLowerCase().includes(query);
+                    const matchDate = (license.dateHanded || "").toLowerCase().includes(query);
+                    
+                    if (!matchName && !matchId && !matchReceiver && !matchPhone && !matchDate) return;
                 }
                 
                 let handoutDetailsHTML = `<span class="text-amber-800 bg-amber-50 px-2 py-0.5 rounded text-xs font-semibold">📥 बक्समा सुरक्षित छ</span>`;
@@ -514,6 +529,40 @@
             document.getElementById('distributed-count').innerText = licenses.filter(l => l.status === 'Distributed').length;
         }
 
+        // Search Trigger Logic
+        function triggerSearch() {
+            const query = searchInput.value.trim();
+            if (query !== "") {
+                resetBtn.classList.remove('hidden');
+            } else {
+                resetBtn.classList.add('hidden');
+            }
+            updateUI(query);
+        }
+
+        function resetSearch() {
+            searchInput.value = "";
+            resetBtn.classList.add('hidden');
+            updateUI("");
+        }
+
+        // Trigger search instantly on typing or pressing ENTER key
+        searchInput.addEventListener('input', () => {
+            if (searchInput.value.trim() === "") {
+                resetBtn.classList.add('hidden');
+            } else {
+                resetBtn.classList.remove('hidden');
+            }
+            updateUI(searchInput.value);
+        });
+
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                triggerSearch();
+            }
+        });
+
         function viewSignature(id) {
             const match = licenses.find(l => l.id === id);
             if(match && match.sig) {
@@ -526,7 +575,6 @@
 
         function closeSigViewer() { sigViewerModal.classList.add('hidden'); }
         
-        // FIXED FUNCTION: Open Handout Modal reliably
         function openHandoutModal(id, licenseeName) {
             try {
                 document.getElementById('modal-license-id').value = id;
@@ -534,7 +582,6 @@
                 document.getElementById('receiver-name').value = licenseeName;
                 document.getElementById('receiver-phone').value = "";
                 
-                // Safe Nepali Date generation fallback
                 if (typeof NepaliFunctions !== "undefined" && typeof NepaliFunctions.ConvertToNepaliDate === "function") {
                     const todayEng = new Date();
                     const todayNepObj = NepaliFunctions.ConvertToNepaliDate(todayEng.getFullYear(), todayEng.getMonth() + 1, todayEng.getDate());
@@ -624,8 +671,6 @@
                 }
             });
         }
-
-        searchInput.addEventListener('input', (e) => updateUI(e.target.value));
     </script>
 </body>
 </html>
