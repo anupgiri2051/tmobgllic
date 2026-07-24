@@ -222,7 +222,7 @@
     </div>
 
     <script>
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwHcV-VBTi1nsUAnFtF58t9USFR_aAQuEJikjHjMiWu9Lc9ln4t9-AC_EzlOuRC-lBr/exec";
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzHtGXwfikvB6q8Ht40aPyyV3No7umOKgovW-zyqSKe72uCOSOLzFW-mrMk44lFajQ/exec";
 
         let licenses = [];
         let systemUsers = [{ username: "admin", role: "Admin" }]; 
@@ -345,25 +345,47 @@
                 updateUI(); renderUsersList();
             } catch (err) {
                 document.getElementById('db-status').innerText = "❌ नेटवर्क समस्या (Offline)";
+                renderUsersList();
             }
         }
 
         function openAdminPanel() { adminModal.classList.remove('hidden'); }
         function closeAdminPanel() { adminModal.classList.add('hidden'); }
 
+        // FIXED: Reliable User Creation Handler
         document.getElementById('create-user-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const username = document.getElementById('new-username').value.trim();
             const password = document.getElementById('new-password').value.trim();
             const role = document.getElementById('new-role').value;
 
-            if (!GOOGLE_SCRIPT_URL.includes("YOUR_DEPLOYED")) {
-                await fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: "createUser", username: username, password: password, role: role })
-                });
+            if (!username || !password) {
+                alert("कृपया प्रयोगकर्ता नाम र पासवर्ड दुवै भर्नुहोस्।");
+                return;
             }
-            alert(`प्रयोगकर्ता '${username}' सुरक्षित भयो !`);
+
+            // Prevent duplicate local entries
+            if (systemUsers.some(u => u.username === username)) {
+                alert(`⚠️ प्रयोगकर्ता '${username}' पहिल्यै दता भइसकेको छ!`);
+                return;
+            }
+
+            // Optimistic local add
+            systemUsers.push({ username: username, role: role });
+            renderUsersList();
+
+            if (!GOOGLE_SCRIPT_URL.includes("YOUR_DEPLOYED")) {
+                try {
+                    await fetch(GOOGLE_SCRIPT_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({ action: "createUser", username: username, password: password, role: role })
+                    });
+                } catch (err) {
+                    console.error("Cloud sync warning:", err);
+                }
+            }
+
+            alert(`सफलतापूर्वक प्रयोगकर्ता '${username}' सुरक्षित भयो !`);
             document.getElementById('create-user-form').reset();
             loadFromSheet();
         });
@@ -546,7 +568,6 @@
             updateUI("");
         }
 
-        // Trigger search instantly on typing or pressing ENTER key
         searchInput.addEventListener('input', () => {
             if (searchInput.value.trim() === "") {
                 resetBtn.classList.add('hidden');
@@ -625,7 +646,6 @@
             }
         }
         
-        // Wacom Capture integration
         function initializeWacomCapture() {
             if (!sigCtl || !dynCapt) {
                 alert("Wacom SigCaptX सेवा तयार छैन। कृपया Wacom STU Driver र SigCaptX स्थापना वा सुरु भएको पुष्टि गर्नुहोस्।");
