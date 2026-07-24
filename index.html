@@ -222,7 +222,7 @@
     </div>
 
     <script>
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzAZcNY35DcavMVtDO837MIfr3os4CUQrKjNh39oFHpQqXpwED__DfcNhlJsbKSrREX/exec";
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxctWxOXIx5JyrdtkBmKirMkSTl2au2VUTt6F7fn-ecBA8-hf4YiSFtWpTyXvNemjNQ/exec";
 
         let licenses = [];
         let systemUsers = [{ username: "admin", role: "Admin" }]; 
@@ -230,7 +230,6 @@
         let selectedMethod = 'screen';
         let wacomSignatureBlob = null;
 
-        // Wacom SigCaptX Global Objects
         let sigCtl = null;
         let dynCapt = null;
 
@@ -247,7 +246,6 @@
         const ctx = canvas ? canvas.getContext('2d') : null;
         let drawing = false;
 
-        // Nepali Date Picker & Wacom Initialization
         window.onload = function() {
             var dateInput = document.getElementById("nepali-date-input");
             if(dateInput && typeof dateInput.nepaliDatePicker === 'function') {
@@ -269,7 +267,6 @@
             }
         };
 
-        // Gatekeeper Login Handler
         document.getElementById('gatekeeper-form').addEventListener('submit', async function(e) {
             e.preventDefault();
             const u = document.getElementById('gate-username').value.trim();
@@ -279,11 +276,6 @@
             errorEl.innerText = "⏳ प्रमाणीकरण हुँदैछ, कृपया पर्खनुहोस्...";
             errorEl.classList.remove('hidden');
             errorEl.className = "text-xs text-amber-600 font-bold mt-3";
-
-            if (GOOGLE_SCRIPT_URL.includes("YOUR_DEPLOYED")) {
-                if (u === "admin" && p === "522051") { enterSystem(); } else { showLoginError(); }
-                return;
-            }
 
             try {
                 const response = await fetch(GOOGLE_SCRIPT_URL, {
@@ -316,7 +308,6 @@
             errorEl.classList.remove('hidden');
         }
 
-        // Canvas Drawing Controls
         if (canvas) {
             canvas.addEventListener('mousedown', () => drawing = true);
             canvas.addEventListener('mouseup', () => { drawing = false; ctx.beginPath(); });
@@ -329,12 +320,7 @@
             });
         }
 
-        // Load DB Rows
         async function loadFromSheet() {
-            if (GOOGLE_SCRIPT_URL.includes("YOUR_DEPLOYED")) {
-                document.getElementById('db-status').innerText = "⚠️ लोकल मोड (No Cloud DB Link)";
-                renderUsersList(); updateUI(); return;
-            }
             try {
                 const response = await fetch(GOOGLE_SCRIPT_URL);
                 const masterPayload = await response.json();
@@ -352,7 +338,6 @@
         function openAdminPanel() { adminModal.classList.remove('hidden'); }
         function closeAdminPanel() { adminModal.classList.add('hidden'); }
 
-        // FIXED: Reliable User Creation Handler
         document.getElementById('create-user-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const username = document.getElementById('new-username').value.trim();
@@ -364,25 +349,21 @@
                 return;
             }
 
-            // Prevent duplicate local entries
             if (systemUsers.some(u => u.username === username)) {
-                alert(`⚠️ प्रयोगकर्ता '${username}' पहिल्यै दता भइसकेको छ!`);
+                alert(`⚠️ प्रयोगकर्ता '${username}' पहिल्यै दर्ता भइसकेको छ!`);
                 return;
             }
 
-            // Optimistic local add
             systemUsers.push({ username: username, role: role });
             renderUsersList();
 
-            if (!GOOGLE_SCRIPT_URL.includes("YOUR_DEPLOYED")) {
-                try {
-                    await fetch(GOOGLE_SCRIPT_URL, {
-                        method: 'POST',
-                        body: JSON.stringify({ action: "createUser", username: username, password: password, role: role })
-                    });
-                } catch (err) {
-                    console.error("Cloud sync warning:", err);
-                }
+            try {
+                await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: "createUser", username: username, password: password, role: role })
+                });
+            } catch (err) {
+                console.error("Cloud sync warning:", err);
             }
 
             alert(`सफलतापूर्वक प्रयोगकर्ता '${username}' सुरक्षित भयो !`);
@@ -400,7 +381,6 @@
             });
         }
 
-        // Import Excel Sheet
         excelInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -425,7 +405,7 @@
                     licenses.push(record);
                 });
 
-                if (!GOOGLE_SCRIPT_URL.includes("YOUR_DEPLOYED") && uploadPayload.length > 0) {
+                if (uploadPayload.length > 0) {
                     await fetch(GOOGLE_SCRIPT_URL, {
                         method: 'POST',
                         body: JSON.stringify({ action: "import", rows: uploadPayload })
@@ -437,7 +417,6 @@
             reader.readAsArrayBuffer(file);
         });
 
-        // Submit Distribution Info
         document.getElementById('handout-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = document.getElementById('modal-license-id').value;
@@ -455,12 +434,10 @@
             const finalNepaliTimestamp = `${nepaliDateSelected} (वि.सं.)`;
 
             modal.classList.add('hidden');
-            if (!GOOGLE_SCRIPT_URL.includes("YOUR_DEPLOYED")) {
-                await fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: "handout", id: id, receiver: receiver, phone: phone, sig: signatureResult, dateHanded: finalNepaliTimestamp })
-                });
-            }
+            await fetch(GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: "handout", id: id, receiver: receiver, phone: phone, sig: signatureResult, dateHanded: finalNepaliTimestamp })
+            });
             alert("वितरण विवरण, नेपाली मिति र डिजिटल हस्ताक्षर सुरक्षित गरियो ।");
             loadFromSheet();
         });
@@ -483,7 +460,6 @@
             }
         }
 
-        // Render UI Table & Filter Search Results
         function updateUI(filterText = "") {
             tableBody.innerHTML = "";
             const boxMetrics = getBoxMetrics();
@@ -524,7 +500,6 @@
                     `;
                 }
 
-                // Safe strings for inline trigger
                 const safeId = String(license.id).replace(/'/g, "\\'");
                 const safeName = String(license.name).replace(/'/g, "\\'");
 
@@ -551,7 +526,6 @@
             document.getElementById('distributed-count').innerText = licenses.filter(l => l.status === 'Distributed').length;
         }
 
-        // Search Trigger Logic
         function triggerSearch() {
             const query = searchInput.value.trim();
             if (query !== "") {
